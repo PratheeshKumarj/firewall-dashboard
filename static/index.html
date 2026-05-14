@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Firewall Dashboard — Fourth Partner Energy</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#f5f5f4; --surface:#ffffff; --surface2:#f1f0ec;
+    --border:rgba(0,0,0,0.10); --border2:rgba(0,0,0,0.18);
+    --text:#1a1a18; --text2:#6b6b66; --text3:#9b9b94;
+    --radius-md:8px; --radius-lg:12px; --radius-xl:16px;
+    --green-bg:#dcfce7; --green-text:#15803d;
+    --red-bg:#fee2e2;   --red-text:#b91c1c;
+    --amber-bg:#fff8e1; --amber-text:#b45309;
+    --blue-bg:#e3f2fd;  --blue-text:#0d47a1;
+    --gray-bg:#f1f0ec;  --gray-text:#6b6b66;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#1a1a18; --surface:#242422; --surface2:#2e2e2b;
+      --border:rgba(255,255,255,0.10); --border2:rgba(255,255,255,0.18);
+      --text:#e8e8e2; --text2:#9b9b94; --text3:#6b6b66;
+      --green-bg:#052e16; --green-text:#4ade80;
+      --red-bg:#450a0a;   --red-text:#f87171;
+      --amber-bg:#1c1200; --amber-text:#fbbf24;
+      --blue-bg:#0a1220;  --blue-text:#93c5fd;
+      --gray-bg:#2e2e2b;  --gray-text:#9b9b94;
+    }
+  }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe UI',sans-serif; min-height:100vh; }
+  .topbar { background:var(--surface); border-bottom:0.5px solid var(--border); padding:0 32px; height:56px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:600; font-size:15px; color:var(--text); text-decoration:none; }
+  .logo-icon { width:32px; height:32px; background:#1a3c6e; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; }
+  .logo-icon i { color:#fff; font-size:18px; }
+  .topbar-right { display:flex; align-items:center; gap:14px; }
+  .live-badge { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text2); }
+  .live-dot { width:7px; height:7px; border-radius:50%; background:#22c55e; animation:pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  @keyframes spin  { to{transform:rotate(360deg);} }
+  .clock { font-size:13px; color:var(--text2); font-variant-numeric:tabular-nums; }
+  .srv-badge { font-size:11px; padding:3px 10px; border-radius:20px; font-weight:500; display:flex; align-items:center; gap:4px; }
+  .srv-ok   { background:var(--green-bg); color:var(--green-text); }
+  .srv-err  { background:var(--red-bg);   color:var(--red-text); }
+  .srv-wait { background:var(--amber-bg); color:var(--amber-text); }
+  .spin { animation:spin 1s linear infinite; display:inline-block; }
+  .container { max-width:1200px; margin:0 auto; padding:28px 24px; }
+  .page-title { font-size:22px; font-weight:600; margin-bottom:4px; }
+  .page-sub { font-size:13px; color:var(--text2); margin-bottom:20px; }
+  .banner { background:var(--amber-bg); color:var(--amber-text); border:0.5px solid var(--amber-text); border-radius:var(--radius-lg); padding:12px 16px; margin-bottom:20px; font-size:13px; display:flex; align-items:flex-start; gap:10px; }
+  .banner i { font-size:20px; flex-shrink:0; margin-top:1px; }
+  .banner code { background:rgba(0,0,0,.1); border-radius:4px; padding:1px 6px; font-size:12px; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:24px; }
+  .stat-card { background:var(--surface); border:0.5px solid var(--border); border-radius:var(--radius-lg); padding:14px 16px; }
+  .stat-label { font-size:11px; color:var(--text2); margin-bottom:6px; display:flex; align-items:center; gap:5px; }
+  .stat-val { font-size:24px; font-weight:600; line-height:1; }
+  .c-green{color:#16a34a;} .c-red{color:#dc2626;} .c-blue{color:#1d4ed8;} .c-amber{color:#b45309;}
+  .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+  .search-wrap { flex:1; min-width:200px; position:relative; }
+  .search-wrap i { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:16px; }
+  .search { width:100%; padding:8px 10px 8px 34px; font-size:13px; border:0.5px solid var(--border2); border-radius:var(--radius-md); background:var(--surface); color:var(--text); outline:none; }
+  .search:focus { border-color:#1a3c6e; }
+  .pills { display:flex; gap:6px; flex-wrap:wrap; }
+  .pill { font-size:12px; padding:5px 14px; border-radius:20px; border:0.5px solid var(--border2); background:transparent; cursor:pointer; color:var(--text2); transition:all .15s; white-space:nowrap; }
+  .pill:hover { background:var(--surface2); }
+  .pill.active { background:#1a3c6e; color:#fff; border-color:#1a3c6e; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+  .card { background:var(--surface); border:0.5px solid var(--border); border-radius:var(--radius-xl); padding:18px 20px; transition:border-color .2s,transform .15s; }
+  .card:hover { border-color:var(--border2); transform:translateY(-1px); }
+  .card.online  { border-left:3px solid #16a34a; }
+  .card.offline { border-left:3px solid #dc2626; }
+  .card.unknown { border-left:3px solid #9ca3af; }
+  .card-head { display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; }
+  .brand-badge { width:42px; height:42px; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+  .fg { background:var(--amber-bg); color:var(--amber-text); }
+  .sp { background:var(--green-bg); color:var(--green-text); }
+  .card-name  { font-size:14px; font-weight:600; line-height:1.3; margin-bottom:2px; }
+  .card-model { font-size:12px; color:var(--text2); }
+  .status-pill { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600; margin-left:auto; flex-shrink:0; }
+  .st-online  { background:var(--green-bg); color:var(--green-text); }
+  .st-offline { background:var(--red-bg);   color:var(--red-text); }
+  .st-unknown { background:var(--gray-bg);  color:var(--gray-text); }
+  .sdot { width:6px; height:6px; border-radius:50%; }
+  .sdot-on  { background:#16a34a; animation:pulse 2s ease-in-out infinite; }
+  .sdot-off { background:#dc2626; }
+  .sdot-unk { background:#9ca3af; }
+  .card-info { display:flex; flex-direction:column; gap:7px; margin-bottom:10px; border-top:0.5px solid var(--border); padding-top:12px; }
+  .info-row { display:flex; justify-content:space-between; align-items:center; font-size:12px; }
+  .info-key { color:var(--text2); display:flex; align-items:center; gap:5px; }
+  .info-val { font-family:'Courier New',monospace; font-size:11px; color:var(--text); max-width:175px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; text-align:right; }
+  .lat-badge { font-size:11px; padding:2px 8px; border-radius:20px; font-weight:500; }
+  .lat-fast { background:var(--green-bg); color:var(--green-text); }
+  .lat-slow { background:var(--amber-bg); color:var(--amber-text); }
+  .lat-none { background:var(--gray-bg);  color:var(--gray-text); }
+  .lic { font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600; }
+  .lic-ok   { background:var(--green-bg); color:var(--green-text); }
+  .lic-none { background:var(--red-bg);   color:var(--red-text); }
+  .last-checked { font-size:10px; color:var(--text3); text-align:right; margin-bottom:10px; }
+  .login-btn { width:100%; padding:9px; font-size:13px; font-weight:500; border-radius:var(--radius-md); border:0.5px solid var(--border2); background:transparent; color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px; transition:background .15s; }
+  .login-btn:hover { background:#1a3c6e; color:#fff; border-color:#1a3c6e; }
+  .no-results { grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--text2); }
+  .no-results i { font-size:40px; display:block; margin-bottom:10px; opacity:.3; }
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; display:flex; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(2px); }
+  .modal { background:var(--surface); border-radius:var(--radius-xl); border:0.5px solid var(--border2); padding:28px; width:100%; max-width:380px; }
+  .modal-header { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .modal-header .brand-badge { width:36px; height:36px; font-size:11px; }
+  .modal-title { font-size:15px; font-weight:600; }
+  .modal-sub    { font-size:12px; color:var(--text2); margin-bottom:6px; margin-left:46px; }
+  .modal-status { margin-left:46px; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  .field { margin-bottom:14px; }
+  .field label { font-size:12px; color:var(--text2); display:block; margin-bottom:5px; }
+  .field input  { width:100%; font-size:13px; padding:9px 12px; border-radius:var(--radius-md); border:0.5px solid var(--border2); background:var(--surface2); color:var(--text); outline:none; }
+  .field input:focus { border-color:#1a3c6e; background:var(--surface); }
+  .modal-actions { display:flex; gap:10px; margin-top:20px; }
+  .btn-cancel  { padding:9px 18px; font-size:13px; border-radius:var(--radius-md); border:0.5px solid var(--border2); background:transparent; color:var(--text2); cursor:pointer; }
+  .btn-connect { flex:1; padding:9px; font-size:13px; font-weight:600; border-radius:var(--radius-md); border:none; background:#1a3c6e; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px; }
+  .btn-connect:hover { background:#0f2a52; }
+  .modal-note { font-size:11px; color:var(--text3); margin-top:12px; text-align:center; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="logo" href="#">
+    <div class="logo-icon"><i class="ti ti-shield-lock"></i></div>
+    Fourth Partner Energy — SCADA
+  </a>
+  <div class="topbar-right">
+    <span class="srv-badge srv-wait" id="srv-badge">
+      <i class="ti ti-loader spin" style="font-size:11px"></i> Connecting…
+    </span>
+    <div class="live-badge"><div class="live-dot"></div> Live</div>
+    <div class="clock" id="clock"></div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="page-title">Firewall dashboard</div>
+  <div class="page-sub" id="page-sub">Fetching ping status…</div>
+
+  <div class="banner" id="banner" style="display:none">
+    <i class="ti ti-alert-triangle"></i>
+    <div id="banner-msg">Cannot reach ping server.</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card"><div class="stat-label"><i class="ti ti-shield"></i> Total</div><div class="stat-val c-blue">9</div></div>
+    <div class="stat-card"><div class="stat-label"><i class="ti ti-wifi"></i> Online</div><div class="stat-val c-green" id="s-on">—</div></div>
+    <div class="stat-card"><div class="stat-label"><i class="ti ti-wifi-off"></i> Offline</div><div class="stat-val c-red" id="s-off">—</div></div>
+    <div class="stat-card"><div class="stat-label"><i class="ti ti-circle-check"></i> Licensed</div><div class="stat-val c-green" id="s-lic">5</div></div>
+    <div class="stat-card"><div class="stat-label"><i class="ti ti-alert-circle"></i> No license</div><div class="stat-val c-red" id="s-nolic">4</div></div>
+    <div class="stat-card"><div class="stat-label"><i class="ti ti-clock"></i> Avg ping</div><div class="stat-val c-amber" id="s-lat" style="font-size:18px">—</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <i class="ti ti-search"></i>
+      <input class="search" id="search" placeholder="Search location, IP, model, serial…" oninput="renderCards()">
+    </div>
+    <div class="pills">
+      <button class="pill active" onclick="setFilter('all',this)">All</button>
+      <button class="pill" onclick="setFilter('online',this)">Online</button>
+      <button class="pill" onclick="setFilter('offline',this)">Offline</button>
+      <button class="pill" onclick="setFilter('Fortigate',this)">Fortigate</button>
+      <button class="pill" onclick="setFilter('Sophose',this)">Sophose</button>
+      <button class="pill" onclick="setFilter('Sophos',this)">Sophos</button>
+      <button class="pill" onclick="setFilter('licensed',this)">Licensed</button>
+      <button class="pill" onclick="setFilter('unlicensed',this)">No license</button>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- Login Modal -->
+<div class="overlay" id="overlay" style="display:none" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="brand-badge" id="m-badge"></div>
+      <div class="modal-title" id="m-title"></div>
+    </div>
+    <div class="modal-sub" id="m-sub"></div>
+    <div class="modal-status" id="m-status"></div>
+    <div class="field"><label>Username</label><input id="m-user" placeholder="admin" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input id="m-pass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-connect" onclick="doLogin()"><i class="ti ti-login"></i> Connect</button>
+    </div>
+    <div class="modal-note" id="m-note"></div>
+  </div>
+</div>
+
+<script>
+// ── Auto-detect API URL ───────────────────────────────────────────────────────
+// When hosted on Railway, the dashboard is served BY the same server,
+// so we just use window.location.origin. Works locally too.
+const API = window.location.origin + '/status';
+const INTERVAL = 30000;
+let firewalls = [];
+let filter = 'all';
+let currentFW = null;
+
+const DEFAULT = [
+  {no:1,brand:'Fortigate',model:'FGT 80E',      sn:'FGT80ETK20024949', ip:'192.168.107.1',   fw:'v6.2.3 build1066 (GA)',           loc:'Kadappa (Chakarayepeta)',          lic:false,online:null,latency_ms:null,last_checked:'—'},
+  {no:2,brand:'Sophose',  model:'XG86',          sn:'C0A102CFDVCFM22',  ip:'172.16.0.100',    fw:'SFOS 20.0.3 MR-3-Build427',       loc:'Kovilpatti (TN)',                  lic:false,online:null,latency_ms:null,last_checked:'—'},
+  {no:3,brand:'Sophose',  model:'Sophos xgs107', sn:'X1012162JMRKM59',  ip:'10.10.0.10',      fw:'SONICOS Enhanced 6.5.4.4-44n',    loc:'Gondal',                           lic:true, online:null,latency_ms:null,last_checked:'—'},
+  {no:4,brand:'Fortigate',model:'FGT 40F',       sn:'FGT40FTK24096781', ip:'10.10.20.1',      fw:'v7.2.6 build1575 (Feature)',      loc:'Pavagada, Tumkur (Dist)',          lic:true, online:null,latency_ms:null,last_checked:'—'},
+  {no:5,brand:'Fortigate',model:'Fortigate 40F', sn:'FGT40FTK2309AQ5X', ip:'192.168.1.105',   fw:'v7.2.11 build1740 (Mature)',      loc:'Melathulukkankkulam Village, TN', lic:true, online:null,latency_ms:null,last_checked:'—'},
+  {no:6,brand:'Fortigate',model:'FortiGate-40F', sn:'FGT40FTK2409AB2A', ip:'192.168.1.241',   fw:'v7.2.6 build1575 (Feature)',      loc:'Saharanpur',                       lic:true, online:null,latency_ms:null,last_checked:'—'},
+  {no:7,brand:'Fortigate',model:'Fortigate 30E', sn:'FGT30E5619076193', ip:'115.244.235.198', fw:'v6.0.6 build0272 (GA)',           loc:'Katol',                            lic:false,online:null,latency_ms:null,last_checked:'—'},
+  {no:8,brand:'Sophos',   model:'SOHO250',       sn:'2CB8ED473ACC',      ip:'172.16.0.100',    fw:'SonicOS Enhanced 6.5.4.15-117n', loc:'UP (Shahjahanpur)',                lic:true, online:null,latency_ms:null,last_checked:'—'},
+  {no:9,brand:'Sophos',   model:'SOHO250',       sn:'2CB8ED9A4460',      ip:'172.16.0.100',    fw:'SONICOS Enhanced 6.5.4.4-44n',   loc:'Atharga (Karnataka)',              lic:false,online:null,latency_ms:null,last_checked:'—'},
+];
+
+async function fetchStatus() {
+  try {
+    const res = await fetch(API, { signal: AbortSignal.timeout(5000) });
+    const data = await res.json();
+    firewalls = data.firewalls;
+    document.getElementById('banner').style.display = 'none';
+    document.getElementById('srv-badge').className = 'srv-badge srv-ok';
+    document.getElementById('srv-badge').innerHTML = '<i class="ti ti-server" style="font-size:11px"></i> Server online';
+    document.getElementById('page-sub').textContent = `Last updated: ${data.server_time} · Auto-refresh every 30s`;
+  } catch {
+    document.getElementById('banner').style.display = 'flex';
+    document.getElementById('srv-badge').className = 'srv-badge srv-err';
+    document.getElementById('srv-badge').innerHTML = '<i class="ti ti-server-off" style="font-size:11px"></i> Server offline';
+    document.getElementById('page-sub').textContent = 'Cannot reach ping server — status unknown';
+    if (!firewalls.length) firewalls = DEFAULT;
+  }
+  updateStats(); renderCards();
+}
+
+function updateStats() {
+  const on  = firewalls.filter(f=>f.online===true);
+  const off = firewalls.filter(f=>f.online===false);
+  const lats = on.map(f=>f.latency_ms).filter(Boolean);
+  const avg  = lats.length ? Math.round(lats.reduce((a,b)=>a+b,0)/lats.length) : null;
+  document.getElementById('s-on').textContent    = on.length;
+  document.getElementById('s-off').textContent   = off.length;
+  document.getElementById('s-lic').textContent   = firewalls.filter(f=>f.lic).length;
+  document.getElementById('s-nolic').textContent = firewalls.filter(f=>!f.lic).length;
+  document.getElementById('s-lat').textContent   = avg ? avg+'ms' : '—';
+}
+
+function bc(b) { return b.toLowerCase().includes('forti')?'fg':'sp'; }
+function bt(b) { return b.toLowerCase().includes('forti')?'FG':'SP'; }
+function pill(online) {
+  if(online===true)  return `<span class="status-pill st-online"><span class="sdot sdot-on"></span>Online</span>`;
+  if(online===false) return `<span class="status-pill st-offline"><span class="sdot sdot-off"></span>Offline</span>`;
+  return `<span class="status-pill st-unknown"><span class="sdot sdot-unk"></span>Unknown</span>`;
+}
+function latBadge(ms,online) {
+  if(online!==true||!ms) return `<span class="lat-badge lat-none">— ms</span>`;
+  return `<span class="lat-badge ${ms<100?'lat-fast':'lat-slow'}">${ms} ms</span>`;
+}
+
+function setFilter(f,el) {
+  filter=f;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  renderCards();
+}
+
+function renderCards() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const shown = firewalls.filter(f=>{
+    if(filter==='online')     return f.online===true;
+    if(filter==='offline')    return f.online===false;
+    if(filter==='licensed')   return f.lic;
+    if(filter==='unlicensed') return !f.lic;
+    if(!['all','online','offline','licensed','unlicensed'].includes(filter)&&
+       f.brand.toLowerCase()!==filter.toLowerCase()) return false;
+    if(q&&!`${f.loc} ${f.ip} ${f.model} ${f.brand} ${f.sn}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const grid = document.getElementById('grid');
+  if(!shown.length){grid.innerHTML='<div class="no-results"><i class="ti ti-shield-off"></i>No firewalls match</div>';return;}
+  const st=f=>f.online===true?'online':f.online===false?'offline':'unknown';
+  grid.innerHTML=shown.map(f=>`
+    <div class="card ${st(f)}">
+      <div class="card-head">
+        <div class="brand-badge ${bc(f.brand)}">${bt(f.brand)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="card-name">${f.loc}</div>
+          <div class="card-model">${f.brand} · ${f.model}</div>
+        </div>
+        ${pill(f.online)}
+      </div>
+      <div class="card-info">
+        <div class="info-row"><span class="info-key"><i class="ti ti-network" style="font-size:13px"></i> IP</span><span class="info-val">${f.ip}</span></div>
+        <div class="info-row"><span class="info-key"><i class="ti ti-activity" style="font-size:13px"></i> Latency</span>${latBadge(f.latency_ms,f.online)}</div>
+        <div class="info-row"><span class="info-key"><i class="ti ti-cpu" style="font-size:13px"></i> Firmware</span><span class="info-val" title="${f.fw}">${f.fw}</span></div>
+        <div class="info-row"><span class="info-key"><i class="ti ti-barcode" style="font-size:13px"></i> Serial</span><span class="info-val">${f.sn}</span></div>
+        <div class="info-row"><span class="info-key"><i class="ti ti-certificate" style="font-size:13px"></i> License</span><span class="lic ${f.lic?'lic-ok':'lic-none'}">${f.lic?'✓ Active':'✗ No license'}</span></div>
+      </div>
+      <div class="last-checked">Last pinged: ${f.last_checked||'—'}</div>
+      <button class="login-btn" onclick="openLogin(${f.no})"><i class="ti ti-login"></i> Login to firewall</button>
+    </div>`).join('');
+}
+
+function openLogin(no) {
+  currentFW=firewalls.find(f=>f.no===no);
+  document.getElementById('m-badge').className=`brand-badge ${bc(currentFW.brand)}`;
+  document.getElementById('m-badge').textContent=bt(currentFW.brand);
+  document.getElementById('m-title').textContent=currentFW.loc;
+  document.getElementById('m-sub').textContent=`${currentFW.brand} ${currentFW.model} · ${currentFW.ip}`;
+  document.getElementById('m-status').innerHTML=pill(currentFW.online)+(currentFW.latency_ms?`<span style="font-size:11px;color:var(--text3)">${currentFW.latency_ms} ms</span>`:'');
+  document.getElementById('m-note').textContent=`Opens: https://${currentFW.ip}`;
+  document.getElementById('m-user').value='';
+  document.getElementById('m-pass').value='';
+  document.getElementById('overlay').style.display='flex';
+  setTimeout(()=>document.getElementById('m-user').focus(),50);
+}
+function closeModal(){document.getElementById('overlay').style.display='none';currentFW=null;}
+function doLogin(){if(!currentFW)return;window.open(`https://${currentFW.ip}`,'_blank');closeModal();}
+document.getElementById('m-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+function tick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false});}
+tick(); setInterval(tick,1000);
+fetchStatus(); setInterval(fetchStatus,INTERVAL);
+</script>
+</body>
+</html>
